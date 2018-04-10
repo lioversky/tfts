@@ -1,0 +1,45 @@
+  data_config:
+    source_type: influxdb
+    params: 
+      measurement: kafka_topic_num1
+      ip: 127.0.0.1
+      port: 8086
+      dbname: mydb
+      metrics:
+      - value
+      dimensions:
+        topic: test
+  
+  train_config: 
+    train_start_time: 2018-01-03
+    model_type: AR
+    period_type: day
+    period_num: 6
+    periodicities: 144
+    batch_size: 10
+    window_size: 60
+    model_dir: /Users/hongxun/PycharmProjects/tfts/save/ar2
+    training_steps: 6000
+    num_features: 1
+    params: 
+      input_window_size: 40
+      output_window_size: 20
+
+  eval_config: 
+    steps: 1
+  
+  predict_config: 
+    predict_start_time: 2018-01-08
+    steps: 144
+    output_type: influxdb
+    params:
+      measurement: kafka_topic_predict
+      metrics:
+       - predict
+      dimensions:
+        topic: test
+      ip: 127.0.0.1
+      port: 8086
+      dbname: mydb
+
+  

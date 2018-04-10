@@ -42,20 +42,33 @@ json文件，解析数据和模型配置，全部如下：
 
 from config import Config
 import json
+import yaml
 
 
-def parse_config(file):
+def parse_json_config(file):
     with open(file, 'r') as f:
         json_dict = json.load(f)
+        f.close()
+    return parse_config(json_dict)
+
+
+def parse_yaml_config(file):
+    with open(file, 'r') as f:
+        yaml_dict = yaml.load(f)
+        f.close()
+    return parse_config(yaml_dict)
+
+
+def parse_config(dict):
     config = Config.Config()
-    if json_dict['data_config'] is not None:
-        config.data_config = parse_data_config(json_dict['data_config'])
-    if json_dict['train_config'] is not None:
-        config.train_config = parse_train_config(json_dict['train_config'])
-    if json_dict['predict_config'] is not None:
-        config.predict_config = parse_predict_config(json_dict['predict_config'])
-    if json_dict['eval_config'] is not None:
-        config.eval_config = parse_evaluation_config(json_dict['eval_config'])
+    if dict['data_config'] is not None:
+        config.data_config = parse_data_config(dict['data_config'])
+    if dict['train_config'] is not None:
+        config.train_config = parse_train_config(dict['train_config'])
+    if dict['predict_config'] is not None:
+        config.predict_config = parse_predict_config(dict['predict_config'])
+    if dict['eval_config'] is not None:
+        config.eval_config = parse_evaluation_config(dict['eval_config'])
 
     return config
 
@@ -111,10 +124,16 @@ def parse_evaluation_config(eval_dict):
 
 
 def parse_predict_config(predict_dict):
-    precidt_config = Config.PredictConfig()
-    precidt_config.steps = predict_dict['steps']
-    precidt_config.predict_start_time = predict_dict['predict_start_time']
-    return precidt_config
+    predict_config = Config.PredictConfig()
+    predict_config.steps = predict_dict['steps']
+    predict_config.predict_start_time = predict_dict['predict_start_time']
+    # 预测结果输出类型和参数
+    predict_config.output_type = predict_dict['output_type']
+    if predict_config.output_type == Config.DataConfig.SOURCE_TYPE_INFLUXDB:
+        influxdb_dict = predict_dict['params']
+        predict_config.output_config = parse_influxdb_config(influxdb_dict)
+
+    return predict_config
 
 
 def parse_data_config(data_dict):
@@ -126,18 +145,24 @@ def parse_data_config(data_dict):
     data_config = Config.DataConfig()
     data_config.source_type = data_dict['source_type']
 
-    data_config.metrics = data_dict['metrics']
-    data_config.dimensions = data_dict['dimensions']
-
     if data_config.source_type == Config.DataConfig.SOURCE_TYPE_INFLUXDB:
         influxdb_dict = data_dict['params']
-        source_config = Config.InfluxdbConfig()
-        source_config.dbname = influxdb_dict['dbname']
-        source_config.ip = influxdb_dict['ip']
-        source_config.port = influxdb_dict['port']
-        source_config.measurement = influxdb_dict['measurement']
-        data_config.source_config = source_config
+        data_config.source_config = parse_influxdb_config(influxdb_dict)
     # todo:解析es config
     elif data_config.source_type == Config.DataConfig.SOURCE_TYPE_ES:
         pass
     return data_config
+
+
+def parse_influxdb_config(influxdb_dict):
+    influxdb_config = Config.InfluxdbConfig()
+    influxdb_config.dbname = influxdb_dict['dbname']
+    influxdb_config.ip = influxdb_dict['ip']
+    influxdb_config.port = influxdb_dict['port']
+    influxdb_config.measurement = influxdb_dict['measurement']
+
+    influxdb_config.metrics = influxdb_dict['metrics']
+    influxdb_config.dimensions = influxdb_dict['dimensions']
+    if influxdb_dict.__contains__('retention_policy'):
+        influxdb_config.retention_policy = influxdb_dict['retention_policy']
+    return influxdb_config

@@ -75,7 +75,8 @@ class PredictConfig:
     def __init__(self):
         self.steps = 0
         self.predict_start_time = 0
-
+        self.output_type = None
+        self.output_config = None
 
 """
 数据量 = period_num * periodicities
@@ -91,14 +92,10 @@ class DataConfig:
     SOURCE_TYPE_FILE = "file"
 
     def __init__(self):
-        self.path = None
-
         # 数据源类型
         self.source_type = None
-
         self.source_config = None
-        self.metrics = []
-        self.dimensions = {}
+
 
 
 class InfluxdbConfig():
@@ -109,6 +106,9 @@ class InfluxdbConfig():
         self.password = ''
         self.dbname = None
         self.measurement = None
+        self.metrics = []
+        self.dimensions = {}
+        self.retention_policy = None
 
 
 class ESConfig:

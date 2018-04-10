@@ -4,9 +4,7 @@ import tensorflow as tf
 from config import config_parser
 from data import data_parser
 from model import model_tools
-from output import plot_tools
-
-import matplotlib.pyplot as plot
+from output import plot_tools, output_tools
 
 
 def train(conf):
@@ -34,30 +32,31 @@ def predict(conf):
     :return:
     """
     tfts_data = data_parser.parse_predict_data(conf)
-    tfts_data.predict_result = model_tools.predict(data=tfts_data.train_data, config=conf)
+    tfts_data.predict_result = model_tools.predict(data=tfts_data.evaluation_data, config=conf)
     return tfts_data
 
 
 if __name__ == '__main__':
     tf.logging.set_verbosity(tf.logging.INFO)
-    config = config_parser.parse_config("./conf/ar_sample.json")
+    config = config_parser.parse_yaml_config("./conf/ar_sample.yaml")
 
     # train(config)
 
     all_data = data_parser.parse_train_data(config)
 
     evaluation_data = evaluate(all_data, config)
-    plot_tools.make_plot(all_data.train_data['times'].reshape(-1),
-                         all_data.train_data['values'].reshape(-1),
-                         evaluation_data.predict_data['times'].reshape(-1),
-                         evaluation_data.predict_data['mean'].reshape(-1),
-                         "eval.png"
-                         )
+    # plot_tools.make_plot(all_data.train_data['times'].reshape(-1),
+    #                      all_data.train_data['values'].reshape(-1),
+    #                      evaluation_data.predict_data['times'].reshape(-1),
+    #                      evaluation_data.predict_data['mean'].reshape(-1),
+    #                      "eval.png"
+    #                      )
 
     predictions = predict(config)
-    plot_tools.make_plot(all_data.train_data['times'].reshape(-1),
-                         all_data.train_data['values'].reshape(-1),
-                         predictions.predict_result['times'].reshape(-1),
-                         predictions.predict_result['mean'].reshape(-1),
-                         "predict.png"
-                         )
+    # plot_tools.make_plot(all_data.train_data['times'].reshape(-1),
+    #                      all_data.train_data['values'].reshape(-1),
+    #                      predictions.predict_result['times'].reshape(-1),
+    #                      predictions.predict_result['mean'].reshape(-1),
+    #                      "predict.png"
+    #                      )
+    output_tools.data_output(config, predictions)

@@ -17,19 +17,21 @@ import datetime
 
 class TFTSData:
     """
-    train_time、predict_time为时间原始数据
+    train_times、evaluation_times、predict_times 为时间原始数据
     train_data = {
         tf.contrib.timeseries.TrainEvalFeatures.TIMES: x,
         tf.contrib.timeseries.TrainEvalFeatures.VALUES: y,
     }
-    predict_data 是evaluation结果，包含start_tuple
+    evaluation_data 是evaluation结果，包含start_tuple
     predict_result为预测结果,
     """
 
     def __init__(self):
-        self.train_time = None
-        self.predict_time = None
+        self.train_times = None
+        self.evaluation_times = None
+        self.predict_times = None
         self.train_data = None
+        self.evaluation_data = None
         self.predict_data = None
         self.predict_result = None
 
@@ -44,7 +46,7 @@ def parse_train_data(config):
     tfts = TFTSData()
     if data_config.source_type == Config.DataConfig.SOURCE_TYPE_INFLUXDB:
         times, load_data = load_data_from_influxdb(config)
-        tfts.train_time = times
+        tfts.train_times = times
         tfts.train_data = load_data
     # TODO:
     # elif data_config.source_type == Config.DataConfig.SOURCE_TYPE_ES:
@@ -100,8 +102,10 @@ def load_data_from_influxdb(config, predict=False):
                     predict_config.predict_start_time,
                     train_config.periodicities * 2)
         # （预测时间-训练时间）秒数/数据周期间隔
-        predict_time = datetime.datetime.strptime(predict_config.predict_start_time, "%Y-%m-%d")
-        train_time = datetime.datetime.strptime(train_config.train_start_time, "%Y-%m-%d")
+        # predict_time = datetime.datetime.strptime(predict_config.predict_start_time, "%Y-%m-%d")
+        predict_time = predict_config.predict_start_time
+        # train_time = datetime.datetime.strptime(train_config.train_start_time, "%Y-%m-%d")
+        train_time = train_config.train_start_time
         end = int((predict_time - train_time).total_seconds() / train_config.period_time_unit)
         # 对x取对应周期序号
         x = np.array(range(end - train_config.periodicities * 2, end, 1))
@@ -135,12 +139,23 @@ def load_data_from_influxdb(config, predict=False):
 
 def parse_predict_data(config):
     """
-    根据配置生成预测数据
+    根据配置生成预测数据，按照预测开始时间生成预测时间序列
     :param config:
     :return:
     """
     times, load_data = load_data_from_influxdb(config, predict=True)
     tfts = TFTSData()
-    tfts.train_data = load_data
-    tfts.predict_time = times
+    tfts.evaluation_data = load_data
+    tfts.evaluation_times = times
+    predict_times = []
+
+    predict_config = config.predict_config
+    train_config = config.train_config
+
+    predict_start_time = datetime.datetime.strptime(str(predict_config.predict_start_time), '%Y-%m-%d')
+    for i in range(predict_config.steps):
+        predict_time = predict_start_time + \
+                       datetime.timedelta(seconds=i * train_config.period_time_unit)
+        predict_times.append(predict_time.strftime('%Y-%m-%dT%H:%M:%SZ'))
+    tfts.predict_times = predict_times
     return tfts
