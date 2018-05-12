@@ -9,28 +9,7 @@
 from util import time_util
 from config import config_model
 import datetime, time
-from data import data_reader
-
-
-class TFTSData:
-    """
-    train_times、evaluation_times、predict_times 为时间原始数据
-    train_data = {
-        tf.contrib.timeseries.TrainEvalFeatures.TIMES: x,
-        tf.contrib.timeseries.TrainEvalFeatures.VALUES: y,
-    }
-    evaluation_data 是evaluation结果，包含start_tuple
-    predict_result为预测结果,
-    """
-
-    def __init__(self):
-        self.train_times = None
-        self.evaluation_times = None
-        self.predict_times = None
-        self.train_data = None
-        self.evaluation_data = None
-        self.predict_data = None
-        self.predict_result = None
+from data import data_model,data_reader
 
 
 def parse_train_data(config):
@@ -41,7 +20,7 @@ def parse_train_data(config):
     """
     data_config = config.data_config
     train_config = config.train_config
-    tfts = TFTSData()
+    tfts = data_model.TFTSData()
     train_start_time = train_config.train_start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
     end_time = datetime.datetime.strptime(train_start_time,
                                           '%Y-%m-%dT%H:%M:%SZ') + time_util.get_timedelta(train_config)
@@ -82,7 +61,7 @@ def parse_predict_data(config):
     predict_start_time = predict_end_time - time_util.get_config_time_seconds(
         predict_config.predict_interval) - time_util.get_config_time_seconds(train_config.period_time_unit)
     # 封装数据
-    tfts = TFTSData()
+    tfts = data_model.TFTSData()
     if data_config.source_type == config.DataConfig.SOURCE_TYPE_INFLUXDB:
         influxdb_config = data_config.source_config
         times, load_data = data_reader.read_data_from_influxdb(influxdb_config, predict_start_time, predict_end_time,
