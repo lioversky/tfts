@@ -49,7 +49,7 @@ def read_data_from_influxdb(influxdb_config, start_time, end_time, train_period_
         values_list = result_dict['values']
         times = np.array(values_list)[:, 0].reshape(-1)
         x = np.array(range(len(values_list)))
-        y = np.array(values_list).astype(np.int32)
+        y = np.array(values_list)[:, 1].astype(np.int32)
         train_data = {
             tf.contrib.timeseries.TrainEvalFeatures.TIMES: x,
             tf.contrib.timeseries.TrainEvalFeatures.VALUES: y,
