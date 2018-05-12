@@ -9,7 +9,7 @@
 from util import time_util
 from config import config_model
 import datetime, time
-from data import data_model,data_reader
+from data import data_model, data_reader
 
 
 def parse_train_data(config):
@@ -57,9 +57,13 @@ def parse_predict_data(config):
     predict_config = config.predict_config
     train_config = config.train_config
     # 计算数据查询起止时间
-    predict_end_time = int(time.time()) - time_util.get_config_time_seconds(predict_config.predict_delay)
-    predict_start_time = predict_end_time - time_util.get_config_time_seconds(
-        predict_config.predict_interval) - time_util.get_config_time_seconds(train_config.period_time_unit)
+    end_time = datetime.datetime.now() - datetime.timedelta(
+        seconds=time_util.get_config_time_seconds(predict_config.predict_delay))
+    predict_end_time = end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+    data_size = time_util.get_config_time_seconds(
+        predict_config.predict_interval) + train_config.period_time_unit * train_config.ar_config.input_window_size
+    predict_start_time = (end_time - datetime.timedelta(seconds=data_size)).strftime('%Y-%m-%dT%H:%M:%SZ')
     # 封装数据
     tfts = data_model.TFTSData()
     if data_config.source_type == config.DataConfig.SOURCE_TYPE_INFLUXDB:
