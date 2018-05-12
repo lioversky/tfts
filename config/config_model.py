@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
-
+"""
+所有配置
+"""
 import tensorflow as tf
 
 
@@ -18,6 +20,9 @@ PERIOD_TYPE_MONTH = "month"
 
 
 class TrainConfig:
+    """
+    样本训练配置
+    """
     ALGR_TYPE_AR = "AR"
     ALGR_TYPE_SE = "SE"
     ALGR_TYPE_LSTM = "LSTM"
@@ -33,6 +38,7 @@ class TrainConfig:
         self.training_steps = 0
         # 每周期数据量
         self.periodicities = 0
+        self.period_interval = 0
         # 每两数据间隔秒数
         self.period_time_unit = 0
         # reader的batch数
@@ -72,11 +78,18 @@ class EvalConfig:
 
 
 class PredictConfig:
+    """
+    预测配置
+    """
+
     def __init__(self):
         self.steps = 0
-        self.predict_start_time = 0
+        self.predict_start_time = None
+        self.predict_interval = 1
+        self.predict_delay = 30
         self.output_type = None
         self.output_config = None
+
 
 """
 数据量 = period_num * periodicities
@@ -95,7 +108,6 @@ class DataConfig:
         # 数据源类型
         self.source_type = None
         self.source_config = None
-
 
 
 class InfluxdbConfig():

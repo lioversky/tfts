@@ -40,7 +40,7 @@ if __name__ == '__main__':
     tf.logging.set_verbosity(tf.logging.INFO)
     config = config_parser.parse_yaml_config("./conf/ar_sample.yaml")
 
-    # train(config)
+    train(config)
 
     all_data = data_parser.parse_train_data(config)
 

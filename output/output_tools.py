@@ -4,12 +4,12 @@
 写出到各种配置中：influxdb,es,kfaka
 """
 from influxdb import InfluxDBClient
-from config import Config
+from config import config_model
 
 
 def data_output(config, data):
     predict_config = config.predict_config
-    if predict_config.output_type == Config.DataConfig.SOURCE_TYPE_INFLUXDB:
+    if predict_config.output_type == config.DataConfig.SOURCE_TYPE_INFLUXDB:
         output_influxdb_data(predict_config.output_config, data)
 
 

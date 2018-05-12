@@ -4,7 +4,7 @@ from __future__ import print_function
 import tensorflow as tf
 from model import LSTMModel
 from tensorflow.contrib.timeseries.python.timeseries import estimators as ts_estimators
-from config import Config
+from config import config_model
 from tensorflow.contrib.timeseries.python.timeseries import NumpyReader
 
 
@@ -69,20 +69,20 @@ def predict(data, config):
 
 
 def create_estimator(train_config):
-    if train_config.model_type == Config.TrainConfig.ALGR_TYPE_AR:
+    if train_config.model_type == config_model.TrainConfig.ALGR_TYPE_AR:
         ar_config = train_config.ar_config
         estimator = tf.contrib.timeseries.ARRegressor(
             periodicities=train_config.periodicities, input_window_size=ar_config.input_window_size,
             output_window_size=ar_config.output_window_size, num_features=train_config.num_features,
             loss=ar_config.loss, model_dir=train_config.model_dir)
         estimator.evaluate
-    elif train_config.model_type == Config.TrainConfig.ALGR_TYPE_SE:
+    elif train_config.model_type == config_model.TrainConfig.ALGR_TYPE_SE:
         se_config = train_config.se_config
         estimator = tf.contrib.timeseries.StructuralEnsembleRegressor(
             periodicities=train_config.periodicities, num_features=train_config.num_features,
             model_dir=train_config.model_dir,
             cycle_num_latent_values=se_config.cycle_num_latent_values)
-    elif train_config.model_type == Config.TrainConfig.ALGR_TYPE_LSTM:
+    elif train_config.model_type == config_model.TrainConfig.ALGR_TYPE_LSTM:
         lstm_config = train_config.lstm_config
         estimator = ts_estimators.TimeSeriesRegressor(
             model=LSTMModel.LSTMModel(num_features=train_config.num_features, num_units=lstm_config.num_units),
