@@ -6,6 +6,7 @@ from model import LSTMModel
 from tensorflow.contrib.timeseries.python.timeseries import estimators as ts_estimators
 from config import config_model
 from tensorflow.contrib.timeseries.python.timeseries import NumpyReader
+from tensorflow.contrib.timeseries.python.timeseries import ar_model
 
 
 def train(data, config):
@@ -58,14 +59,13 @@ def predict(data, config):
     estimator = create_estimator(train_config)
 
     # 获取评估结果
-    evaluation = evaluate(data, config)
+    evaluation_result = evaluate(data, config)
     # 预测
     predict_config = config.predict_config
     input_fn = tf.contrib.timeseries.predict_continuation_input_fn(
-        evaluation, steps=predict_config.steps)
+        evaluation_result, steps=predict_config.steps)
     (predictions,) = tuple(estimator.predict(input_fn))
-
-    return predictions
+    return evaluation_result, predictions
 
 
 def create_estimator(train_config):

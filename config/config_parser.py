@@ -53,11 +53,15 @@ def parse_json_config(file):
     return parse_config(json_dict)
 
 
-def parse_yaml_config(file):
+def parse_yaml_file(file):
     with open(file, 'r') as f:
         yaml_dict = yaml.load(f)
         f.close()
     return parse_config(yaml_dict)
+
+
+def parse_yaml_str(config_str):
+    return parse_config(yaml.load(config_str))
 
 
 def parse_config(dict):
@@ -94,11 +98,11 @@ def parse_train_config(train_dict):
     train_config.period_time_unit = time_util.get_config_time_seconds(train_config.period_interval)
 
     if train_config.period_type == config_model.PERIOD_TYPE_HOUR:
-        train_config.periodicities = 3600 / train_config.period_time_unit
+        train_config.periodicities = int(3600 / train_config.period_time_unit)
     elif train_config.period_type == config_model.PERIOD_TYPE_DAY:
-        train_config.periodicities = 3600 * 24 / train_config.period_time_unit
+        train_config.periodicities = int(3600 * 24 / train_config.period_time_unit)
     elif train_config.period_type == config_model.PERIOD_TYPE_WEEK:
-        train_config.periodicities = 3600 * 24 * 7 / train_config.period_time_unit
+        train_config.periodicities = int(3600 * 24 * 7 / train_config.period_time_unit)
 
     params_dict = train_dict['params']
     # 各模型参数

@@ -15,8 +15,8 @@ def read_data_from_influxdb(influxdb_config, start_time, end_time, train_period_
     从influxdb中读取数据
     训练数据按照训练周期读取
     :param influxdb_config:数据库配置
-    :param predict_start_time:
-    :param predict_end_time:
+    :param start_time:
+    :param end_time:
     :param train_period_interval: 样本周期间隔
     :return:
     """
@@ -44,20 +44,15 @@ def read_data_from_influxdb(influxdb_config, start_time, end_time, train_period_
             train_period_interval
         )
         result = client.query(sql)
-        result_dict = result.raw['series'][0]
-        colums_list = result_dict['columns']
-        values_list = result_dict['values']
-        times = np.array(values_list)[:, 0].reshape(-1)
-        x = np.array(range(len(values_list)))
-        y = np.array(values_list)[:, 1].astype(np.int32)
-        train_data = {
-            tf.contrib.timeseries.TrainEvalFeatures.TIMES: x,
-            tf.contrib.timeseries.TrainEvalFeatures.VALUES: y,
-        }
+        if len(result) > 0:
+            result_dict = result.raw['series'][0]
+            values_list = result_dict['values']
+            ts_times = np.array(values_list)[:, 0].reshape(-1)
+            ts_data = np.array(values_list)[:, 1:].astype(np.int32)
     finally:
         client.close()
 
-    return times, train_data
+    return ts_times, ts_data
 
 
 def load_data_from_influxdb(config, predict=False):

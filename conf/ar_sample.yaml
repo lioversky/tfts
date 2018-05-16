@@ -18,7 +18,7 @@
     period_interval: 10m
     batch_size: 10
     window_size: 60
-    model_dir: /Users/hongxun/PycharmProjects/tfts/save/ar3
+    model_dir: /Users/hongxun/PycharmProjects/tfts/save/ar4
     training_steps: 6000
     num_features: 1
     params: 
@@ -29,9 +29,9 @@
     steps: 1
   
   predict_config:
-    predict_interval: 5s
-    predict_delay: 30s
-    steps: 144
+    predict_interval: 500m
+    predict_delay: 10m
+    steps: 50
 
 
   
