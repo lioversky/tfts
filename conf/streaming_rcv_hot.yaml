@@ -1,0 +1,50 @@
+  data_config:
+    source_type: influxdb
+    train_start_time: 2018-04-16
+    period_type: day
+    period_num: 10
+    period_interval: 3m
+    params: 
+      measurement: streaming_app_rcv_num
+      ip: 127.0.0.1
+      port: 8086
+      dbname: mydb
+      metrics:
+      - value
+      dimensions:
+        appname: hotweibo-filter
+  
+  train_config:
+    model_type: AR
+    batch_size: 10
+    window_size: 60
+    model_dir: /Users/hongxun/PycharmProjects/tfts/save/hot_ar2
+    training_steps: 10000
+    num_features: 1
+    params:
+      num_units : 128
+      input_window_size: 40
+      output_window_size: 20
+
+  eval_config: 
+    steps: 1
+  
+  predict_config:
+    predict_interval: 1200m
+    predict_delay: 10m
+
+  output_config:
+    - output_type: influxdb
+      data_type: prediction
+      params:
+        dbname: prediction
+        measurement: streaming_app_prediction
+        ip: 127.0.0.1
+        port: 8086
+        metrics:
+        - value
+        dimensions:
+          appname: hotweibo-filter
+
+
+  
