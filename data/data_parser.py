@@ -6,12 +6,12 @@
 
 """
 
-from util import time_util
+from util.time_util import *
 from config import config_model
-import datetime, time
 from data import data_model, data_reader
 import tensorflow as tf
 import numpy as np
+import datetime
 
 
 def parse_train_data(config):
@@ -23,17 +23,24 @@ def parse_train_data(config):
     data_config = config.data_config
     train_config = config.train_config
     tfts = data_model.TFTSData()
-    train_start_time = train_config.train_start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
-    end_time = datetime.datetime.strptime(train_start_time,
-                                          '%Y-%m-%dT%H:%M:%SZ') + time_util.get_timedelta(train_config)
+    train_start_time = date_to_str(train_config.train_start_time, DATETIME_FORMAT_1)
 
-    train_end_time = end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+    timedelta = None
+    if train_config.period_type == config_model.PERIOD_TYPE_HOUR:
+        timedelta = datetime.timedelta(hours=train_config.period_num)
+    elif train_config.period_type == config_model.PERIOD_TYPE_DAY:
+        timedelta = datetime.timedelta(days=train_config.period_num)
+    elif train_config.period_type == config_model.PERIOD_TYPE_WEEK:
+        timedelta = datetime.timedelta(weeks=train_config.period_num)
+
+    end_time = str_to_datetime(train_start_time, DATETIME_FORMAT_1) + timedelta
+    train_end_time = datetime_to_str(end_time, DATETIME_FORMAT_1)
 
     if data_config.source_type == config_model.DataConfig.SOURCE_TYPE_INFLUXDB:
         influxdb_config = data_config.source_config
         # 训练样本的起止时间
         times, load_data = data_reader.read_data_from_influxdb(influxdb_config, train_start_time, train_end_time,
-                                                               train_config.period_interval)
+                                                               train_config.period_interval, smooth=True)
         tfts.train_times = times
         x = np.array(range(len(times)))
         tfts.train_data = {
@@ -63,22 +70,26 @@ def parse_predict_data(config):
     predict_config = config.predict_config
     train_config = config.train_config
     # 计算数据查询起止时间
+    cur_timestamp = get_cur_timestamp()
+    cur_timestamp = str_to_timestamp('2018-05-05T22:00:00Z', DATETIME_FORMAT_1)
+    # end_time = datetime.datetime.strptime('2018-05-05T22:00:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    # end_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(
+    #     cur_timestamp - time_util.get_config_time_seconds(predict_config.predict_delay)))
+    end_time = timestamp_to_datetime(
+        int((cur_timestamp - get_config_time_seconds(
+            predict_config.predict_delay)) / train_config.period_time_unit) * train_config.period_time_unit)
 
-    end_time = datetime.datetime.strptime('2018-05-14T11:00:00Z', '%Y-%m-%dT%H:%M:%SZ')
-    #        - datetime.timedelta(
-    # seconds=time_util.get_config_time_seconds(predict_config.predict_delay))
-    predict_end_time_str = end_time.strftime('%Y-%m-%dT%H:%M:%SZ')
+    predict_end_time_str = datetime_to_str(end_time, DATETIME_FORMAT_1)
+    evaluation_data_size = train_config.window_size
+    second_size = get_config_time_seconds(
+        predict_config.predict_interval) + train_config.period_time_unit * evaluation_data_size
+    start_time = datetime_add_seconds(end_time, -second_size)
 
-    second_size = time_util.get_config_time_seconds(
-        predict_config.predict_interval) + train_config.period_time_unit * train_config.periodicities
-    start_time = (end_time - datetime.timedelta(seconds=second_size))
-    predict_start_time_str = start_time.strftime('%Y-%m-%dT%H:%M:%SZ')
-
-    train_start_datetime = datetime.datetime.strptime(train_config.train_start_time.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                                                      '%Y-%m-%dT%H:%M:%SZ')
-    base_index = train_config.periodicities + int((
-                                                              start_time - train_start_datetime).total_seconds() / train_config.period_time_unit) % train_config.periodicities
-    # 封装数据 todo: start_time取整
+    predict_start_time_str = datetime_to_str(start_time, DATETIME_FORMAT_1)
+    # 使用训练开始时间计算周期
+    train_start_datetime = date_to_datetime(train_config.train_start_time)
+    base_index = int((start_time - train_start_datetime).total_seconds() / train_config.period_time_unit)
+    # 封装数据
     tfts = data_model.TFTSData()
     if data_config.source_type == config_model.DataConfig.SOURCE_TYPE_INFLUXDB:
         influxdb_config = data_config.source_config
@@ -86,13 +97,13 @@ def parse_predict_data(config):
                                                                 predict_end_time_str,
                                                                 train_config.period_interval)
     # 只保留window_size数作为evaluation
-    x = np.array(range(base_index, base_index + train_config.periodicities))
+    x = np.array(range(base_index, base_index + evaluation_data_size))
     tfts.evaluation_data = {
         tf.contrib.timeseries.TrainEvalFeatures.TIMES: x,
-        tf.contrib.timeseries.TrainEvalFeatures.VALUES: ts_data[0:train_config.periodicities, :],
+        tf.contrib.timeseries.TrainEvalFeatures.VALUES: ts_data[0:evaluation_data_size, :],
     }
-    tfts.evaluation_times = ts_times[0:train_config.periodicities]
+    tfts.evaluation_times = ts_times[0:evaluation_data_size]
 
-    tfts.predict_times = ts_times[train_config.periodicities:]
-    tfts.real_data = ts_data[train_config.periodicities:, :]
+    tfts.predict_times = ts_times[evaluation_data_size:]
+    tfts.real_data = ts_data[evaluation_data_size:, :]
     return tfts

@@ -8,16 +8,17 @@
 from influxdb import InfluxDBClient
 import numpy as np
 import tensorflow as tf
+from util import data_util
 
 
-def read_data_from_influxdb(influxdb_config, start_time, end_time, train_period_interval):
+def read_data_from_influxdb(influxdb_config, start_time, end_time, period_interval, smooth=False):
     """
     从influxdb中读取数据
     训练数据按照训练周期读取
     :param influxdb_config:数据库配置
     :param start_time:
     :param end_time:
-    :param train_period_interval: 样本周期间隔
+    :param period_interval: 样本周期间隔
     :return:
     """
 
@@ -41,14 +42,19 @@ def read_data_from_influxdb(influxdb_config, start_time, end_time, train_period_
             end_time,
             start_time,
             dimensions_str,
-            train_period_interval
+            period_interval
         )
         result = client.query(sql)
         if len(result) > 0:
             result_dict = result.raw['series'][0]
             values_list = result_dict['values']
             ts_times = np.array(values_list)[:, 0].reshape(-1)
-            ts_data = np.array(values_list)[:, 1:].astype(np.int32)
+            origin_data = np.array(values_list)[:, 1:]
+            # 做平滑处理或填充空值
+            if smooth:
+                ts_data = data_util.diff_smooth(origin_data)
+            else:
+                ts_data = data_util.fill_np_none(origin_data)
     finally:
         client.close()
 
@@ -63,7 +69,7 @@ def load_data_from_influxdb(config, predict=False):
     :param config:
     :param predict:
     :return:
-    """
+
     data_config = config.data_config
     influxdb_config = data_config.source_config
     client = InfluxDBClient(influxdb_config.ip, influxdb_config.port,
@@ -92,7 +98,7 @@ def load_data_from_influxdb(config, predict=False):
         values_list = result_dict['values']
         # 再取反转正序
         times = np.array(values_list)[:, 0][::-1].reshape(-1)
-        y = np.array(values_list)[:, 2][::-1].astype(np.int32)
+        y = np.array(values_list,dtype=np.int32)[:, 2][::-1].astype(np.int32)
     else:
 
         sql = "select * from {0} where time >= '{1}' " \
@@ -112,6 +118,7 @@ def load_data_from_influxdb(config, predict=False):
     }
     client.close()
     return times, train_data
+    """
 
 
 def load_data_from_file(data_config):

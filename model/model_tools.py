@@ -6,7 +6,6 @@ from model import LSTMModel
 from tensorflow.contrib.timeseries.python.timeseries import estimators as ts_estimators
 from config import config_model
 from tensorflow.contrib.timeseries.python.timeseries import NumpyReader
-from tensorflow.contrib.timeseries.python.timeseries import ar_model
 
 
 def train(data, config):
@@ -42,7 +41,7 @@ def evaluate(data, config, estimator=None):
         estimator = create_estimator(train_config)
 
     evaluation_input_fn = tf.contrib.timeseries.WholeDatasetInputFn(reader)
-    evaluation = estimator.evaluate(input_fn=evaluation_input_fn, steps=eval_config.steps)
+    evaluation = estimator.evaluate(input_fn=evaluation_input_fn, steps=2)
 
     return evaluation
 

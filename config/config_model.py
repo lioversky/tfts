@@ -42,9 +42,9 @@ class TrainConfig:
         # 每两数据间隔秒数
         self.period_time_unit = 0
         # reader的batch数
-        self.batch_size = 10
+        self.batch_size = 0
         # 读入batch的量
-        self.window_size = 60
+        self.window_size = 0
 
         self.train_start_time = 0
         self.period_type = PERIOD_TYPE_DAY

@@ -60,3 +60,5 @@ def main(argv):
 if __name__ == '__main__':
     tf.logging.set_verbosity(tf.logging.INFO)
     main(sys.argv[1:])
+
+    sys.exit(0)

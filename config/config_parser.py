@@ -136,6 +136,7 @@ def parse_predict_config(predict_dict):
     predict_config.steps = predict_dict['steps']
     predict_config.predict_interval = predict_dict['predict_interval']
     predict_config.predict_delay = predict_dict['predict_delay']
+
     # 预测结果输出类型和参数
     # predict_config.output_type = predict_dict['output_type']
     if predict_config.output_type == config_model.DataConfig.SOURCE_TYPE_INFLUXDB:

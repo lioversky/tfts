@@ -11,20 +11,6 @@ from util import time_util
 scheduler = BlockingScheduler()
 
 
-def train(conf):
-    """
-    训练模型
-    1.解析数据配置
-    2.解析模型配置
-    3.生成数据
-    4.训练模型
-    :return:
-    """
-    tfts_data = data_parser.parse_train_data(conf)
-    estimator = model_tools.train(data=tfts_data.train_data, config=conf)
-    return tfts_data, estimator
-
-
 def evaluate(tfts_data, conf):
     tfts_data.predict_data = model_tools.evaluate(data=tfts_data.train_data, config=conf)
     return tfts_data

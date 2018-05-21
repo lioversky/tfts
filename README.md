@@ -15,6 +15,7 @@ pip3 install matplotlib
 sudo pip3 install python-etcd
 pip3 install pyyaml
 pip3 install apscheduler
+pip3 install statsmodels
 ```
 
 
