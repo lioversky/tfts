@@ -11,6 +11,7 @@ class Config:
         self.train_config = None
         self.eval_config = None
         self.predict_config = None
+        self.output_list = None
 
 
 PERIOD_TYPE_HOUR = "hour"
@@ -38,18 +39,11 @@ class TrainConfig:
         self.training_steps = 0
         # 每周期数据量
         self.periodicities = 0
-        self.period_interval = 0
-        # 每两数据间隔秒数
-        self.period_time_unit = 0
+
         # reader的batch数
         self.batch_size = 0
         # 读入batch的量
         self.window_size = 0
-
-        self.train_start_time = 0
-        self.period_type = PERIOD_TYPE_DAY
-        # 周期个数
-        self.period_num = 0
 
 
 class ARConfig:
@@ -108,6 +102,13 @@ class DataConfig:
         # 数据源类型
         self.source_type = None
         self.source_config = None
+        self.period_interval = 0
+        # 每两数据间隔秒数
+        self.period_time_unit = 0
+        self.train_start_time = 0
+        self.period_type = PERIOD_TYPE_DAY
+        # 周期个数
+        self.period_num = 0
 
 
 class InfluxdbConfig():
@@ -126,3 +127,10 @@ class InfluxdbConfig():
 class ESConfig:
     def __init__(self):
         self.ip = None
+
+
+class OutputConfig:
+    def __init__(self):
+        self.output_type = None
+        self.data_type = None
+        self.output_config = None

@@ -21,17 +21,16 @@ def parse_train_data(config):
     :return:
     """
     data_config = config.data_config
-    train_config = config.train_config
     tfts = data_model.TFTSData()
-    train_start_time = date_to_str(train_config.train_start_time, DATETIME_FORMAT_1)
+    train_start_time = date_to_str(data_config.train_start_time, DATETIME_FORMAT_1)
 
     timedelta = None
-    if train_config.period_type == config_model.PERIOD_TYPE_HOUR:
-        timedelta = datetime.timedelta(hours=train_config.period_num)
-    elif train_config.period_type == config_model.PERIOD_TYPE_DAY:
-        timedelta = datetime.timedelta(days=train_config.period_num)
-    elif train_config.period_type == config_model.PERIOD_TYPE_WEEK:
-        timedelta = datetime.timedelta(weeks=train_config.period_num)
+    if data_config.period_type == config_model.PERIOD_TYPE_HOUR:
+        timedelta = datetime.timedelta(hours=data_config.period_num)
+    elif data_config.period_type == config_model.PERIOD_TYPE_DAY:
+        timedelta = datetime.timedelta(days=data_config.period_num)
+    elif data_config.period_type == config_model.PERIOD_TYPE_WEEK:
+        timedelta = datetime.timedelta(weeks=data_config.period_num)
 
     end_time = str_to_datetime(train_start_time, DATETIME_FORMAT_1) + timedelta
     train_end_time = datetime_to_str(end_time, DATETIME_FORMAT_1)
@@ -40,7 +39,7 @@ def parse_train_data(config):
         influxdb_config = data_config.source_config
         # 训练样本的起止时间
         times, load_data = data_reader.read_data_from_influxdb(influxdb_config, train_start_time, train_end_time,
-                                                               train_config.period_interval, smooth=True)
+                                                               data_config.period_interval, smooth=True)
         tfts.train_times = times
         x = np.array(range(len(times)))
         tfts.train_data = {
@@ -77,25 +76,25 @@ def parse_predict_data(config):
     #     cur_timestamp - time_util.get_config_time_seconds(predict_config.predict_delay)))
     end_time = timestamp_to_datetime(
         int((cur_timestamp - get_config_time_seconds(
-            predict_config.predict_delay)) / train_config.period_time_unit) * train_config.period_time_unit)
+            predict_config.predict_delay)) / data_config.period_time_unit) * data_config.period_time_unit)
 
     predict_end_time_str = datetime_to_str(end_time, DATETIME_FORMAT_1)
     evaluation_data_size = train_config.window_size
     second_size = get_config_time_seconds(
-        predict_config.predict_interval) + train_config.period_time_unit * evaluation_data_size
+        predict_config.predict_interval) + data_config.period_time_unit * evaluation_data_size
     start_time = datetime_add_seconds(end_time, -second_size)
 
     predict_start_time_str = datetime_to_str(start_time, DATETIME_FORMAT_1)
     # 使用训练开始时间计算周期
-    train_start_datetime = date_to_datetime(train_config.train_start_time)
-    base_index = int((start_time - train_start_datetime).total_seconds() / train_config.period_time_unit)
+    train_start_datetime = date_to_datetime(data_config.train_start_time)
+    base_index = int((start_time - train_start_datetime).total_seconds() / data_config.period_time_unit)
     # 封装数据
     tfts = data_model.TFTSData()
     if data_config.source_type == config_model.DataConfig.SOURCE_TYPE_INFLUXDB:
         influxdb_config = data_config.source_config
         ts_times, ts_data = data_reader.read_data_from_influxdb(influxdb_config, predict_start_time_str,
                                                                 predict_end_time_str,
-                                                                train_config.period_interval)
+                                                                data_config.period_interval)
     # 只保留window_size数作为evaluation
     x = np.array(range(base_index, base_index + evaluation_data_size))
     tfts.evaluation_data = {

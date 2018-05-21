@@ -41,7 +41,7 @@ def evaluate(data, config, estimator=None):
         estimator = create_estimator(train_config)
 
     evaluation_input_fn = tf.contrib.timeseries.WholeDatasetInputFn(reader)
-    evaluation = estimator.evaluate(input_fn=evaluation_input_fn, steps=2)
+    evaluation = estimator.evaluate(input_fn=evaluation_input_fn, steps=1)
 
     return evaluation
 

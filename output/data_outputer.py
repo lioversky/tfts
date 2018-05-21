@@ -7,10 +7,10 @@ from influxdb import InfluxDBClient
 from config import config_model
 
 
-def data_output(config, data):
-    predict_config = config.predict_config
-    if predict_config.output_type == config.DataConfig.SOURCE_TYPE_INFLUXDB:
-        output_influxdb_data(predict_config.output_config, data)
+def data_output(output_list, data):
+    for config in output_list:
+        if config.output_type == config_model.DataConfig.SOURCE_TYPE_INFLUXDB:
+            output_influxdb_data(config.output_config, data)
 
 
 def output_influxdb_data(influxdb_config, data):

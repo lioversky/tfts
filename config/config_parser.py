@@ -69,18 +69,20 @@ def parse_config(dict):
     if dict['data_config'] is not None:
         config.data_config = parse_data_config(dict['data_config'])
     if dict['train_config'] is not None:
-        config.train_config = parse_train_config(dict['train_config'])
+        config.train_config = parse_train_config(dict['train_config'], config.data_config)
     if dict['predict_config'] is not None:
-        config.predict_config = parse_predict_config(dict['predict_config'])
+        config.predict_config = parse_predict_config(dict['predict_config'], config.data_config)
     if dict['eval_config'] is not None:
         config.eval_config = parse_evaluation_config(dict['eval_config'])
-
+    if dict['output_config'] is not None:
+        config.output_list = parse_output_config(dict['output_config'])
     return config
 
 
-def parse_train_config(train_dict):
+def parse_train_config(train_dict, data_config):
     """
     解析训练配置
+    :param data_config: 数据配置
     :param train_dict:
     :return:
     """
@@ -89,20 +91,13 @@ def parse_train_config(train_dict):
     train_config.batch_size = train_dict['batch_size']
     train_config.window_size = train_dict['window_size']
     train_config.num_features = train_dict['num_features']
-    train_config.train_start_time = train_dict['train_start_time']
 
-    train_config.period_num = train_dict['period_num']
-    train_config.period_type = train_dict['period_type']
-    train_config.period_interval = train_dict['period_interval']
-    # 计算每个样本间隔周期秒数和单周期样本数
-    train_config.period_time_unit = time_util.get_config_time_seconds(train_config.period_interval)
-
-    if train_config.period_type == config_model.PERIOD_TYPE_HOUR:
-        train_config.periodicities = int(3600 / train_config.period_time_unit)
-    elif train_config.period_type == config_model.PERIOD_TYPE_DAY:
-        train_config.periodicities = int(3600 * 24 / train_config.period_time_unit)
-    elif train_config.period_type == config_model.PERIOD_TYPE_WEEK:
-        train_config.periodicities = int(3600 * 24 * 7 / train_config.period_time_unit)
+    if data_config.period_type == config_model.PERIOD_TYPE_HOUR:
+        train_config.periodicities = int(3600 / data_config.period_time_unit)
+    elif data_config.period_type == config_model.PERIOD_TYPE_DAY:
+        train_config.periodicities = int(3600 * 24 / data_config.period_time_unit)
+    elif data_config.period_type == config_model.PERIOD_TYPE_WEEK:
+        train_config.periodicities = int(3600 * 24 * 7 / data_config.period_time_unit)
 
     params_dict = train_dict['params']
     # 各模型参数
@@ -131,10 +126,12 @@ def parse_evaluation_config(eval_dict):
     return eval_config
 
 
-def parse_predict_config(predict_dict):
+def parse_predict_config(predict_dict, data_config):
     predict_config = config_model.PredictConfig()
-    predict_config.steps = predict_dict['steps']
+    # predict_config.steps = predict_dict['steps']
     predict_config.predict_interval = predict_dict['predict_interval']
+    predict_config.steps = int(
+        time_util.get_config_time_seconds(predict_config.predict_interval) / data_config.period_time_unit)
     predict_config.predict_delay = predict_dict['predict_delay']
 
     # 预测结果输出类型和参数
@@ -153,6 +150,13 @@ def parse_data_config(data_dict):
     :return:
     """
     data_config = config_model.DataConfig()
+    data_config.train_start_time = data_dict['train_start_time']
+    data_config.period_num = data_dict['period_num']
+    data_config.period_type = data_dict['period_type']
+    data_config.period_interval = data_dict['period_interval']
+    # 计算每个样本间隔周期秒数和单周期样本数
+    data_config.period_time_unit = time_util.get_config_time_seconds(data_config.period_interval)
+
     data_config.source_type = data_dict['source_type']
 
     if data_config.source_type == config_model.DataConfig.SOURCE_TYPE_INFLUXDB:
@@ -176,3 +180,15 @@ def parse_influxdb_config(influxdb_dict):
     if influxdb_dict.__contains__('retention_policy'):
         influxdb_config.retention_policy = influxdb_dict['retention_policy']
     return influxdb_config
+
+
+def parse_output_config(output_list):
+    outputs = []
+    for item in output_list:
+        config = config_model.OutputConfig()
+        config.output_type = item['output_type']
+        config.data_type = item['data_type']
+        if config.output_type == config_model.DataConfig.SOURCE_TYPE_INFLUXDB:
+            config.output_config = parse_influxdb_config(item['params'])
+        outputs.append(config)
+    return outputs

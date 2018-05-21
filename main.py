@@ -4,7 +4,11 @@ import tensorflow as tf
 from config import config_parser, config_reader
 from data import data_parser
 from model import model_tools
+from output import data_outputer
+
 import sys
+import numpy as np
+import matplotlib.pyplot as plot
 
 
 def train(conf):
@@ -45,33 +49,57 @@ def main(argv):
     config_str = config_reader.read_config(key_name, host=etcd_ip)
     config = config_parser.parse_yaml_str(config_str)
 
+    # result = data_parser.parse_train_data(config)
+    #
+    # train(config)
 
-    result = data_parser.parse_train_data(config)
-    # result = evaluate(data_parser.parse_train_data(config), config)
-    # result = predict(config)
+    print_eval(config)
+    print_predict(config)
 
 
-    import matplotlib.pyplot as plot
-
+def print_eval(config):
+    result = evaluate(data_parser.parse_train_data(config), config)
     plot.figure(figsize=(15, 5))
     plot.plot(result.train_data['times'].reshape(-1), result.train_data['values'].reshape(-1), label='origin')
-    # plot.plot(result.evaluation_data['times'].reshape(-1), result.evaluation_data['values'].reshape(-1), label='origin')
+    plot.plot(result.evaluation_result['times'].reshape(-1), result.evaluation_result['mean'].reshape(-1),
+              label='evaluation')
 
-    # plot.plot(result.evaluation_result['times'].reshape(-1), result.evaluation_result['mean'].reshape(-1),
-    #           label='evaluation')
-    # plot.plot(result.predict_result['times'].reshape(-1), result.predict_result['mean'].reshape(-1),
-    #           label='prediction')
-    # plot.plot(result.predict_result['times'].reshape(-1), result.real_data.reshape(-1),
-    #           label='real')
     plot.xlabel('time_step')
     plot.ylabel('values')
     plot.legend(loc=4)
-    plot.savefig("mobile-origin1.png")
+    # plot.title('RMSE: %.4f' %
+    #            np.sqrt(sum((mean_data - origin_data) ** 2) / origin_data.size))
+    plot.savefig("images/hot/train-ar-hot7.png")
+
+
+def print_predict(config):
+    result = predict(config)
+    data_outputer.data_output(config.output_list, result)
+
+    plot.figure(figsize=(15, 5))
+    origin_data = result.real_data.reshape(-1)
+    mean_data = result.predict_result['mean'].reshape(-1)
+    # plot.plot(result.train_data['times'].reshape(-1), result.train_data['values'].reshape(-1), label='origin')
+    plot.plot(result.evaluation_data['times'].reshape(-1), result.evaluation_data['values'].reshape(-1), label='origin')
+
+    plot.plot(result.evaluation_result['times'].reshape(-1), result.evaluation_result['mean'].reshape(-1),
+              label='evaluation')
+    plot.plot(result.predict_result['times'].reshape(-1), result.predict_result['mean'].reshape(-1),
+              label='prediction')
+    plot.plot(result.predict_result['times'].reshape(-1), result.real_data.reshape(-1),
+              label='real')
+    plot.xlabel('time_step')
+    plot.ylabel('values')
+    plot.legend(loc=4)
+    plot.title('RMSE: %.4f' %
+               np.sqrt(sum((mean_data - origin_data) ** 2) / origin_data.size))
+    plot.savefig("images/hot/pred-ar-hot7.png")
 
 
 if __name__ == '__main__':
     tf.logging.set_verbosity(tf.logging.INFO)
     main(sys.argv[1:])
+    sys.exit(0)
 
     # train(config)
 
